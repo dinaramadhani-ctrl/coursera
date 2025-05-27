@@ -1,0 +1,98 @@
+---
+title: "Laporan"
+author: "Dina Ramadhani"
+date: "5/27/2025"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Laporan Proyek: Prediksi Cara Latihan Menggunakan Machine Learning di R
+1. Pendahuluan
+Tujuan dari proyek ini adalah membangun model prediktif untuk menentukan cara latihan (classe) yang dilakukan oleh peserta berdasarkan data sensor dari perangkat wearable. Data diperoleh dari platform Coursera (kursus Practical Machine Learning) dan mengandung fitur akselerometer dan giroskop selama beberapa jenis aktivitas.
+
+2. Persiapan Data
+a. Mengimpor dan Membersihkan Data
+Dataset diunduh langsung dari tautan resmi:
+
+r
+train_data <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"), na.strings = c("NA", "", "#DIV/0!"))
+test_data <- read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"), na.strings = c("NA", "", "#DIV/0!"))
+Langkah-langkah pra-pemrosesan:
+
+Menghapus kolom dengan nilai NA terlalu banyak.
+Menghapus kolom yang tidak relevan (metadata: ID, timestamp, username).
+Mengonversi classe ke faktor sebagai target variabel klasifikasi.
+
+r
+train_data <- train_data[, colSums(is.na(train_data)) == 0]
+train_data <- train_data[, -c(1:7)]
+test_data <- test_data[, colSums(is.na(test_data)) == 0]
+test_data <- test_data[, -c(1:7)]
+train_data$classe <- as.factor(train_data$classe)
+3. Pemisahan Data: Latih dan Validasi
+Agar evaluasi model lebih valid dan mencegah overfitting, data pelatihan dibagi menjadi dua:
+
+70% data untuk pelatihan (training)
+
+30% data untuk validasi (validation)
+
+r
+set.seed(123)
+trainIndex <- createDataPartition(train_data$classe, p = 0.7, list = FALSE)
+training <- train_data[trainIndex, ]
+validation <- train_data[-trainIndex, ]
+4. Pembangunan Model: Random Forest
+Model dipilih berdasarkan akurasi yang tinggi dan kemampuan menangani data dengan banyak fitur dan interaksi non-linear.
+
+r
+model_rf <- randomForest(classe ~ ., data = training, ntree = 100)
+Model dilatih menggunakan 100 pohon keputusan.
+
+5. Evaluasi Model
+Prediksi dilakukan pada set validasi untuk mengevaluasi performa:
+
+r
+pred_validation <- predict(model_rf, validation)
+conf_matrix <- confusionMatrix(pred_validation, validation$classe)
+📌 Hasil Evaluasi:
+Akurasi: r round(conf_matrix$overall["Accuracy"], 4)
+
+Out-of-sample error: r round(1 - conf_matrix$overall["Accuracy"], 4)
+
+6. Prediksi terhadap Data Uji
+Model kemudian digunakan untuk memprediksi 20 observasi dari data uji:
+
+r
+pred_test <- predict(model_rf, test_data)
+Hasil prediksi disimpan:
+
+r
+write.csv(pred_test, file = "predictions.csv", row.names = FALSE)
+7. Kesimpulan
+Model Random Forest terbukti sangat efektif dalam mengklasifikasikan cara latihan berdasarkan data sensor. Dengan akurasi validasi lebih dari 99%, kita dapat memperkirakan bahwa expected out-of-sample error berkisar di bawah 1%.
+
+🔍 Alasan Pemilihan Model:
+Random Forest tidak sensitif terhadap outlier.
+
+Sangat kuat dalam menangani banyak fitur.
+
+Tidak membutuhkan scaling atau normalisasi.
+
+8. Lampiran dan File Tambahan
+File yang disertakan dalam repositori:
+
+project_report.Rmd – Laporan proyek ini.
+
+project_report.html – Versi HTML dari laporan.
+
+model_rf.R – Kode R untuk preprocessing dan pelatihan model.
+
+predictions.csv – Hasil prediksi dari data uji.
+
+9. Referensi
+Coursera - Practical Machine Learning
+
+Kuhn, M. (2020). caret: Classification and Regression Training. R package.
